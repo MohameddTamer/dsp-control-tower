@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+backend/control_tower.db
+backend/*.log
+backups/
+config.env

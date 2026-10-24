@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSP Control Tower</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    color-scheme:dark;
+    --void:#0A0C0A; --panel:#10140F; --panel2:#161B14; --line:#263026; --line2:#1B241B;
+    --txt:#D8E2D4; --dim:#7E8F79; --phos:#7BD88F; --amber:#E8B33D; --red:#E5534B;
+    --sans:'Archivo',"Helvetica Neue",Helvetica,Arial,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,"SF Mono",Consolas,"Courier New",monospace;
+  }
+  *{box-sizing:border-box;border-radius:0}
+  html{font-variant-numeric:tabular-nums}
+  body{margin:0;background:var(--void);color:var(--txt);font-family:var(--sans);font-size:13.5px;line-height:1.45}
+  ::selection{background:var(--phos);color:#0A0C0A}
+  :focus-visible{outline:1.5px solid var(--phos);outline-offset:1px}
+
+  /* instrument bar */
+  header{display:flex;align-items:stretch;gap:0;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:10px;padding:9px 14px;border-right:1px solid var(--line)}
+  .brand .mark{flex:none}
+  .brand h1{font-size:15px;margin:0;font-weight:800;letter-spacing:.14em}
+  .brand h1 b{color:var(--phos)}
+  .brand small{display:block;font-family:var(--mono);font-weight:400;font-size:9.5px;letter-spacing:.08em;color:var(--dim)}
+  .hgroup{display:flex;align-items:flex-end;gap:8px;padding:7px 12px;border-right:1px solid var(--line);flex-wrap:wrap}
+  .fld label{display:block;font-size:9.5px;letter-spacing:.14em;color:var(--dim);font-weight:700;margin-bottom:3px}
+  input,select,button{font-family:var(--mono);font-size:12.5px;background:#0C100C;color:var(--txt);
+    border:1px solid var(--line);padding:6px 9px}
+  input[type="date"]{min-width:138px}
+  input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.75) sepia(.4) saturate(3) hue-rotate(60deg);cursor:pointer}
+  input[type="number"]{font-variant-numeric:tabular-nums}
+  button{font-family:var(--sans);font-weight:700;font-size:11px;letter-spacing:.1em;cursor:pointer;background:var(--panel2)}
+  button:hover{border-color:var(--phos);color:var(--phos)}
+  button.primary{background:var(--phos);border-color:var(--phos);color:#0A0C0A}
+  button.primary:hover{background:#93E5A5;color:#0A0C0A}
+  .who{font-family:var(--mono);font-size:11.5px;color:var(--dim);align-self:center}
+
+  /* ticker */
+  #ticker{border-bottom:1px solid var(--line);background:#0C100C;overflow:hidden;white-space:nowrap;
+    font-family:var(--mono);font-size:11.5px;color:var(--dim);padding:5px 0}
+  #ticker .track{display:inline-block;padding-left:100%;animation:tick 38s linear infinite}
+  #ticker b{color:var(--phos);font-weight:600}
+  #ticker .sep{color:var(--line);padding:0 10px}
+  @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+
+  /* screen tabs */
+  nav{display:flex;border-bottom:1px solid var(--line);background:var(--panel);overflow-x:auto}
+  nav button{border:0;border-right:1px solid var(--line2);background:transparent;color:var(--dim);
+    padding:9px 13px;font-size:10.5px;white-space:nowrap}
+  nav button .no{font-family:var(--mono);color:#48543F;margin-right:6px;font-weight:400}
+  nav button.on{color:var(--phos);background:var(--panel2);box-shadow:inset 0 -2px 0 var(--phos)}
+  nav button.on .no{color:var(--phos)}
+
+  main{max-width:1560px;margin:0 auto}
+  section{display:none} section.on{display:block}
+  .panel{border-bottom:1px solid var(--line);padding:14px 18px 18px;background:var(--panel)}
+  .panel.alt{background:var(--void)}
+  .phead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+  .phead h2{font-size:11px;letter-spacing:.18em;margin:0;font-weight:800}
+  .phead h2 .no{font-family:var(--mono);color:var(--phos);font-weight:500;margin-right:8px}
+  .phead .meta{font-family:var(--mono);font-size:11px;color:var(--dim)}
+
+  /* readout strip: one ruled line of instruments, never cards */
+  .strip{display:flex;flex-wrap:wrap;border:1px solid var(--line);background:var(--panel2)}
+  .ro{padding:9px 16px 10px;border-right:1px solid var(--line);min-width:150px;flex:1}
+  .ro:last-child{border-right:0}
+  .ro small{display:block;font-size:9.5px;letter-spacing:.16em;color:var(--dim);font-weight:700}
+  .ro b{font-family:var(--mono);font-size:23px;font-weight:600;line-height:1.25}
+  .ro .unit{font-size:12px;color:var(--dim)}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:5px 9px;text-align:left;border-bottom:1px solid var(--line2);font-size:12.8px;vertical-align:middle}
+  th{font-size:9.8px;letter-spacing:.14em;color:var(--dim);font-weight:700;border-bottom:1px solid var(--line)}
+  td.n,th.n{font-family:var(--mono);text-align:right;font-size:12.5px}
+  th.n{text-align:right}
+  tr.click{cursor:pointer} tr.click:hover td{background:var(--panel2)}
+  tr.sel td{background:var(--panel2);box-shadow:inset 2px 0 0 var(--phos)}
+  .ok{color:var(--phos)} .warn{color:var(--amber)} .bad{color:var(--red)}
+  .dim{color:var(--dim)} .mono{font-family:var(--mono)}
+  .smallflag{font-family:var(--mono);font-size:10.5px;color:var(--amber);letter-spacing:.06em}
+  .spark polyline{fill:none;stroke:var(--phos);stroke-width:1.4}
+  @keyframes flashBg{0%{background:rgba(123,216,143,.38)}100%{background:transparent}}
+  .flash{animation:flashBg .15s ease-out}
+
+  .alert{display:flex;gap:10px;align-items:baseline;padding:6px 10px;border-bottom:1px solid var(--line2);font-size:12.8px}
+  .alert .tick{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.06em;flex:none}
+  .alert.red .tick{color:var(--red)} .alert.amber .tick{color:var(--amber)}
+  .alert .who2{font-weight:700}
+  .alert .off{color:var(--dim)}
+  .alert .det{font-family:var(--mono);font-size:12px;color:var(--dim)}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr}
+  .cols>div{padding:4px 18px 6px 0}
+  .cols>div+div{border-left:1px solid var(--line);padding-left:18px}
+  .facts{display:grid;grid-template-columns:130px 1fr;row-gap:5px;font-size:12.8px}
+  .facts dt{font-size:9.8px;letter-spacing:.14em;color:var(--dim);font-weight:700;padding-top:2px}
+  .facts dd{margin:0;font-family:var(--mono);font-size:12.5px}
+  .subh{font-size:10.5px;letter-spacing:.16em;color:var(--dim);font-weight:800;margin:16px 0 7px}
+  .line-row{font-family:var(--mono);font-size:12.3px;padding:3.5px 0;border-bottom:1px solid var(--line2)}
+  pre{background:#0C100C;border:1px solid var(--line);padding:12px 14px;white-space:pre-wrap;
+    font-family:var(--mono);font-size:12.5px;line-height:1.6}
+  .chart svg{width:100%;height:auto;display:block}
+  .chart .axis{stroke:var(--line)} .chart .grid{stroke:var(--line2);stroke-dasharray:3 4}
+  .chart text{fill:var(--dim);font-size:10.5px;font-family:var(--mono)}
+  .chart .line{fill:none;stroke:var(--phos);stroke-width:1.6}
+  .chart .pt{fill:var(--phos)}
+  .chart .barB{fill:var(--phos)}
+  .filewrap{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .filewrap input[type="file"]{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+  .filewrap .fname{font-family:var(--mono);font-size:12px;color:var(--dim)}
+  .tvwrap td,.tvwrap th{font-size:19px;padding:11px 12px}
+  .tvwrap .ro b{font-size:34px}
+  #loginBox{max-width:400px;margin:9vh auto;border:1px solid var(--line);background:var(--panel);padding:26px 28px}
+  #loginBox .fld{margin-bottom:12px}
+  #loginBox input{width:100%}
+  #searchOut{position:absolute;top:calc(100% + 4px);left:0;background:var(--panel2);border:1px solid var(--line);z-index:9;min-width:250px}
+  #searchOut div{padding:7px 10px;cursor:pointer;font-family:var(--mono);font-size:12.3px}
+  #searchOut div:hover{background:var(--panel)}
+  .kbdhint{font-family:var(--mono);font-size:10px;color:#48543F}
+  @media(max-width:900px){.cols{grid-template-columns:1fr}.cols>div+div{border-left:0;padding-left:0}.ro{min-width:120px}}
+  @media (prefers-reduced-motion: reduce){
+    #ticker .track{animation:none;padding-left:0}
+    .flash{animation:none}
+  }
+  @media print{
+    body{background:#fff;color:#000}
+    header,nav,#ticker,#loginBox,.no-print{display:none !important}
+    main{max-width:none}
+    section{display:none !important}
+    #s-report{display:block !important}
+    .panel,.strip{background:#fff;border-color:#999}
+    .ro{border-color:#999}
+    table,th,td{border-color:#bbb;color:#000;background:#fff}
+    .phead h2,.ro small,th{color:#333}
+    .ok{color:#14532d}.warn{color:#92600a}.bad{color:#a11}
+    .chart .line{stroke:#14532d}.chart .pt{fill:#14532d}.chart .barB{fill:#14532d}
+    .chart text{fill:#333}.chart .grid{stroke:#ddd}.chart .axis{stroke:#999}
+    .spark polyline{stroke:#14532d}
+  }
+</style>
+</head>
+<body data-terminal>
+
+<div id="loginBox">
+  <div class="brand" style="border:0;padding:0 0 6px">
+    <svg class="mark" width="30" height="30" viewBox="0 0 32 32" fill="none" stroke="#7BD88F" stroke-width="1.7"><path d="M10 28 L16 10 L22 28"/><path d="M12.6 21 H19.4"/><circle cx="16" cy="7" r="1.8" fill="#7BD88F" stroke="none"/><path d="M11.4 3.6 a6.6 6.6 0 0 1 9.2 0"/></svg>
+    <h1>DSP <b>CONTROL TOWER</b><small>FOLLOW-UP DESK SIGN IN</small></h1>
+  </div>
+  <p class="dim" style="font-size:12.3px">Sign in with a follow-up desk account. Demo accounts are listed in the README.</p>
+  <div class="fld"><label for="u">USERNAME</label><input id="u" autocomplete="username"></div>
+  <div class="fld"><label for="p">PASSWORD</label><input id="p" type="password" autocomplete="current-password"></div>
+  <button class="primary" style="width:100%;padding:9px" onclick="doLogin()">SIGN IN</button>
+  <p id="loginErr" class="bad mono" style="font-size:12px;min-height:16px"></p>
+</div>
+
+<div id="app" style="display:none">
+<header>
+  <div class="brand">
+    <svg class="mark" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#7BD88F" stroke-width="1.7"><path d="M10 28 L16 10 L22 28"/><path d="M12.6 21 H19.4"/><circle cx="16" cy="7" r="1.8" fill="#7BD88F" stroke="none"/><path d="M11.4 3.6 a6.6 6.6 0 0 1 9.2 0"/></svg>
+    <h1>DSP <b>CONTROL TOWER</b><small>DELIVERY STATION OPERATIONS</small></h1>
+  </div>
+  <div class="hgroup">
+    <div class="fld"><label for="dFrom">FROM</label><input type="date" id="dFrom"></div>
+    <div class="fld"><label for="dTo">TO</label><input type="date" id="dTo"></div>
+    <button onclick="reload()">RECOMPUTE</button>
+  </div>
+  <div class="hgroup" style="position:relative">
+    <div class="fld"><label for="q">SEARCH <span class="kbdhint">[ / ]</span></label>
+      <input id="q" placeholder="Courier or office" oninput="doSearch()" style="width:210px"></div>
+    <div id="searchOut" style="display:none"></div>
+  </div>
+  <div class="hgroup" style="border-right:0">
+    <span class="who" id="who"></span>
+    <button onclick="exportCsv('offices')">OFFICES CSV</button>
+    <button onclick="exportCsv('couriers')">COURIERS CSV</button>
+  </div>
+</header>
+<div id="ticker" aria-hidden="true"><span class="track" id="tickerTrack">STATION WIRE — WAITING FOR DATA</span></div>
+<nav id="tabs"></nav>
+<main>
+  <section id="s-home"></section>
+  <section id="s-offices"></section>
+  <section id="s-couriers"></section>
+  <section id="s-pod"></section>
+  <section id="s-safety"></section>
+  <section id="s-plans"></section>
+  <section id="s-invoices"></section>
+  <section id="s-planner"></section>
+  <section id="s-tv"></section>
+  <section id="s-audit"></section>
+  <section id="s-report"></section>
+</main>
+</div>
+
+<script>
+let S = { token: sessionStorage.getItem('ct2') || '', role: '', office_id: null };
+const $ = id => document.getElementById(id);
+const TABS = [ ['home','OVERVIEW'], ['offices','OFFICES'], ['couriers','COURIERS'],
+  ['pod','POD PHOTOS'], ['safety','SAFETY'], ['plans','PLANS + RESCUES'],
+  ['invoices','INVOICES'], ['planner','TOMORROW'], ['tv','TV BOARD'], ['audit','AUDIT LOG'],
+  ['report','WEEKLY REPORT'] ];
+let officeNames = {};
+let prevVals = {};
+let selIdx = -1;
+
+async function api(path, opts={}){
+  const r = await fetch(path, { headers:{ 'Authorization':'Bearer '+S.token, 'Content-Type':'application/json' }, ...opts });
+  if(r.status === 401){ showLogin(); throw new Error('auth'); }
+  if(!r.ok) throw new Error((await r.json()).error || r.status);
+  const ct = r.headers.get('Content-Type') || '';
+  return ct.includes('text/') ? r.text() : r.json();
+}
+function rng(){ return `from=${$('dFrom').value}&to=${$('dTo').value}`; }
+function rateCls(v){ return v >= 95 ? 'ok' : v >= 90 ? 'warn' : 'bad'; }
+function showLogin(){ $('app').style.display='none'; $('loginBox').style.display='block'; }
+function esc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+/* values that changed since the last render flash once, phosphor, 150ms */
+function armFlash(scope){
+  scope.querySelectorAll('[data-fk]').forEach(el => {
+    const k = el.dataset.fk, v = el.textContent.trim();
+    if(prevVals[k] !== undefined && prevVals[k] !== v) el.classList.add('flash');
+    prevVals[k] = v;
+  });
+}
+function spark(points, w=88, h=20){
+  if(!points || points.length < 2) return '<span class="dim mono" style="font-size:11px">—</span>';
+  const min = Math.min(...points), max = Math.max(...points), span = (max - min) || 1;
+  const pts = points.map((v,i) => (1 + i*(w-2)/(points.length-1)).toFixed(1) + ',' +
+                                 (h-3-((v-min)/span)*(h-6)).toFixed(1)).join(' ');
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts}"/></svg>`;
+}
+async function officeSparks(offices){
+  const map = {};
+  await Promise.all(offices.map(async o => {
+    try{ const d = await api(`/api/offices/${o.id}?`+rng()); map[o.id] = d.curve.map(x => x.success_rate); }
+    catch(e){ map[o.id] = null; }
+  }));
+  return map;
+}
+function setTicker(items){
+  const html = items.map(([k,v]) => `${k} <b>${v}</b>`).join('<span class="sep">///</span>');
+  $('tickerTrack').innerHTML = html + '<span class="sep">///</span>' + html;
+}
+
+async function doLogin(){
+  const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ username: $('u').value, password: $('p').value }) });
+  if(!r.ok){ $('loginErr').textContent = 'Wrong username or password.'; return; }
+  const d = await r.json();
+  S.token = d.token; S.role = d.role; S.office_id = d.office_id;
+  sessionStorage.setItem('ct2', S.token);
+  boot();
+}
+async function boot(){
+  try{ const me = await api('/api/me'); S.role = me.role; S.office_id = me.office_id;
+       $('who').textContent = me.user + ' · ' + me.role; }catch(e){ showLogin(); return; }
+  $('loginBox').style.display='none'; $('app').style.display='block';
+  $('tabs').innerHTML = TABS.map(([k,en],i) =>
+    `<button id="tab-${k}" onclick="go('${k}')"><span class="no">${String(i+1).padStart(2,'0')}</span>${en}</button>`).join('');
+  const offs = await api('/api/offices');
+  offs.offices.forEach(o => officeNames[o.id] = o.name);
+  $('dFrom').value = offs.from; $('dTo').value = offs.to;
+  go('home');
+}
+function go(k){
+  TABS.forEach(([x]) => { $('s-'+x).classList.toggle('on', x===k); $('tab-'+x).classList.toggle('on', x===k); });
+  ({ home: vHome, offices: vOffices, couriers: vCouriers, pod: vPod, safety: vSafety,
+     plans: vPlans, invoices: vInvoices, planner: vPlanner, tv: vTV, audit: vAudit,
+     report: vReport })[k]();
+}
+function reload(){ go(document.querySelector('section.on').id.slice(2)); }
+$('dFrom').addEventListener('change', reload);
+$('dTo').addEventListener('change', reload);
+
+function strip(items){
+  return `<div class="strip">` + items.map(([label, val, fk, cls]) =>
+    `<div class="ro"><small>${label}</small><b class="${cls||''}" ${fk?`data-fk="${fk}"`:''}>${val}</b></div>`).join('') + `</div>`;
+}
+async function vHome(){
+  const [{ offices }, { couriers }, al] = await Promise.all([
+    api('/api/offices?'+rng()), api('/api/couriers?'+rng()), api('/api/alerts?date='+$('dTo').value) ]);
+  const A = offices.reduce((s,o)=>s+o.assigned,0), D = offices.reduce((s,o)=>s+o.delivered,0),
+        C = offices.reduce((s,o)=>s+o.completed,0), R = offices.reduce((s,o)=>s+o.rts,0);
+  const rate = C ? (100*D/C).toFixed(1) : 0;
+  const top = offices.find(o => o.rank === 1);
+  setTicker([['STATION SUCCESS', rate+'%'], ['STOPS', A.toLocaleString('en-US')], ['DELIVERED', D.toLocaleString('en-US')],
+             ['RTS', R], ['TOP OFFICE', top ? `${top.name} ${top.success_rate}%` : '—'],
+             ['ALERTS ' + $('dTo').value, al.alerts.length]]);
+  const sparks = await officeSparks(offices);
+  $('s-home').innerHTML = `
+    <div class="panel">${strip([
+      ['STOPS IN RANGE', A.toLocaleString('en-US'), 'stops'],
+      ['DELIVERED', D.toLocaleString('en-US'), 'deliv'],
+      ['STATION SUCCESS', rate + '<span class="unit">%</span>', 'srate', rateCls(+rate)],
+      ['STATION RETURNS (RTS)', R, 'rts']])}
+    </div>
+    <div class="panel alt">
+      <div class="phead"><h2><span class="no">A</span>13:00 CHECKPOINT ALERTS</h2><span class="meta">${$('dTo').value}</span></div>
+      ${ al.alerts.length ? al.alerts.map(a =>
+        `<div class="alert ${a.type==='rate down'?'amber':'red'}"><span class="tick">[${a.type.toUpperCase()}]</span>
+         <span class="who2">${esc(a.courier)}</span><span class="off">${esc(a.office||'')}</span>
+         <span class="det">${esc(a.detail)}</span></div>`).join('')
+        : '<p class="dim mono" style="font-size:12.3px">No alerts for this day.</p>' }
+    </div>
+    <div class="panel">
+      <div class="phead"><h2><span class="no">B</span>OFFICE RANKING</h2><span class="meta">SPARK = SUCCESS BY DAY, THIS RANGE</span></div>
+      ${officeTable(offices, sparks)}
+    </div>
+    <div class="panel alt">
+      <div class="phead"><h2><span class="no">C</span>COURIER RANKING</h2><span class="meta">J/K MOVES, ENTER OPENS — COURIERS SCREEN</span></div>
+      ${courierTable(couriers)}
+    </div>`;
+  armFlash($('s-home'));
+}
+function officeTable(rows, sparks){
+  return `<table><tr><th class="n">RK</th><th>OFFICE</th><th class="n">DAs</th><th class="n">STOPS</th><th class="n">DELIVERED</th>
+    <th class="n">SUCCESS %</th><th class="n">DCR</th><th class="n">DNR</th><th class="n">POD</th><th>TREND</th><th>SPARK</th></tr>` +
+    rows.map(o => `<tr class="click" onclick="openOffice(${o.id})">
+      <td class="n">${o.rank ?? '<span class="smallflag">SMALL SAMPLE</span>'}</td><td style="font-weight:600">${esc(o.name)}</td>
+      <td class="n">${o.couriers_active}</td><td class="n">${o.assigned.toLocaleString('en-US')}</td><td class="n">${o.delivered.toLocaleString('en-US')}</td>
+      <td class="n ${rateCls(o.success_rate)}" data-fk="off${o.id}">${o.success_rate}%</td><td class="n">${o.dcr}%</td>
+      <td class="n">${o.dnr_rate}%</td><td class="n">${o.pod_score}%</td>
+      <td class="mono" style="font-size:12px">${o.trend === null ? '<span class="dim">—</span>' : (o.trend >= 0 ? '<span class="ok">▲ ' : '<span class="bad">▼ ') + Math.abs(o.trend) + '</span>'}</td>
+      <td>${sparks ? spark(sparks[o.id]) : '<span class="dim">—</span>'}</td></tr>`).join('') + '</table>';
+}
+function courierTable(rows){
+  return `<table><tr><th class="n">RK</th><th>COURIER</th><th>OFFICE</th><th class="n">STOPS</th><th class="n">DELIVERED</th>
+    <th class="n">SUCCESS %</th><th class="n">ADJ %</th><th class="n">DCR</th><th>BAND</th><th class="n">LEAVE DAYS</th></tr>` +
+    rows.map(c => `<tr class="click" data-cid="${c.id}" onclick="openCourier(${c.id})">
+      <td class="n">${c.rank ?? '<span class="smallflag">SMALL</span>'}</td><td style="font-weight:600">${esc(c.name)}</td>
+      <td class="dim">${esc(c.office_name ?? '')}</td>
+      <td class="n">${c.assigned.toLocaleString('en-US')}</td><td class="n">${c.delivered.toLocaleString('en-US')}</td>
+      <td class="n ${rateCls(c.success_rate)}" data-fk="da${c.id}">${c.success_rate}%</td><td class="n">${c.adjusted_rate}%</td>
+      <td class="n">${c.dcr}%</td><td class="mono" style="font-size:11.5px;letter-spacing:.05em">${c.band.toUpperCase()}</td>
+      <td class="n">${c.leave_days_in_range}</td></tr>`).join('') + '</table>';
+}
+async function pickOffice(id){ go('offices'); await vOffices(); openOffice(id); $('searchOut').style.display='none'; }
+async function vOffices(){
+  const { offices } = await api('/api/offices?'+rng());
+  const sparks = await officeSparks(offices);
+  $('s-offices').innerHTML = `<div class="panel">
+    <div class="phead"><h2><span class="no">02</span>OFFICES</h2><span class="meta">CLICK AN OFFICE TO OPEN IT</span></div>
+    ${officeTable(offices, sparks)}</div><div id="officeDetail"></div>`;
+  armFlash($('s-offices'));
+}
+async function openOffice(id){
+  const d = await api(`/api/offices/${id}?`+rng());
+  const t = d.totals;
+  $('officeDetail').innerHTML = `
+    <div class="panel alt">
+      <div class="phead"><h2>${esc(d.office.name).toUpperCase()}</h2>
+      <span class="meta">${esc(d.office.contact_person)} · ${esc(d.office.phone)}</span></div>
+      ${strip([['SUCCESS', t.success_rate+'<span class="unit">%</span>', null, rateCls(t.success_rate)],
+               ['DCR', t.dcr+'<span class="unit">%</span>'], ['DNR CLAIMS', t.dnr], ['RETURNS', t.rts]])}
+      <div class="subh">ITS COURIERS, RANKED</div>${courierTable(d.couriers)}
+      <div class="subh">WEAKEST ROUTES</div>
+      <table><tr><th>ROUTE</th><th class="n">STOPS</th><th class="n">SUCCESS %</th></tr>
+      ${d.worst_areas.map(a => `<tr><td>${esc(a.route)}</td><td class="n">${a.assigned.toLocaleString('en-US')}</td>
+        <td class="n ${rateCls(a.success_rate)}">${a.success_rate}%</td></tr>`).join('')}</table>
+      <div class="subh">WHATSAPP SUMMARY FOR THE OFFICE OWNER</div>
+      <p class="dim" style="font-size:12.3px;margin:0 0 8px">Text generated here. This system sends nothing to anyone.</p>
+      <button onclick="waText(${id})">GENERATE SUMMARY FOR THE LAST DAY</button>
+      <pre id="waOut" style="display:none"></pre>
+    </div>`;
+}
+async function waText(id){
+  const txt = await api(`/api/offices/${id}/whatsapp?date=${$('dTo').value}`);
+  $('waOut').style.display='block'; $('waOut').textContent = txt;
+}
+async function vCouriers(){
+  const { couriers } = await api('/api/couriers?'+rng());
+  selIdx = -1;
+  $('s-couriers').innerHTML = `<div class="panel">
+    <div class="phead"><h2><span class="no">03</span>COURIERS</h2><span class="meta">J / K TO WALK THE TABLE, ENTER OPENS THE FILE</span></div>
+    ${courierTable(couriers)}</div><div id="courierDetail"></div>`;
+  armFlash($('s-couriers'));
+}
+async function openCourier(id){
+  if(!$('s-couriers').classList.contains('on')) go('couriers');
+  const d = await api(`/api/couriers/${id}?`+rng());
+  const p = d.profile, t = d.totals;
+  $('courierDetail').innerHTML = `
+    <div class="panel alt">
+      <div class="phead"><h2>${esc(p.name).toUpperCase()}</h2><span class="meta">DA FILE — RANGE ${$('dFrom').value} .. ${$('dTo').value}</span></div>
+      <div class="cols"><div>
+        <dl class="facts">
+          <dt>PHONE</dt><dd>${esc(p.phone)}</dd>
+          <dt>VEHICLE</dt><dd>${esc(p.vehicle)}</dd>
+          <dt>STARTED</dt><dd>${esc(p.start_date)}</dd>
+          <dt>CURRENT OFFICE</dt><dd>${esc(officeNames[d.office_now] || ('Office #' + d.office_now))}</dd>
+          <dt>NOTES</dt><dd>${esc(p.notes) || '—'}</dd>
+        </dl>
+        <div class="subh">ANNUAL LEAVE BALANCE</div>
+        <p class="mono" style="font-size:12.5px">Taken ${d.leave_used_annual} days · ${d.leave_balance_annual} left of ${p.annual_leave_total}</p>
+        <div class="subh">OFFICE HISTORY</div>
+        ${d.office_history.map(h => `<div class="line-row">${esc(h.office_name)}: ${h.from_date} ${h.to_date ? 'to '+h.to_date : '— current'}</div>`).join('')}
+        <div class="subh">LEAVE</div>
+        ${d.leaves.length ? d.leaves.map(l => `<div class="line-row">${esc(l.type)}: ${l.from_date} to ${l.to_date}</div>`).join('') : '<p class="dim mono" style="font-size:12.3px">None.</p>'}
+      </div><div>
+        <div class="subh" style="margin-top:0">SUCCESS, THIS RANGE</div>
+        <div class="mono ${rateCls(t.success_rate)}" style="font-size:30px;font-weight:600">${t.success_rate}%</div>
+        <p class="mono" style="font-size:12.3px">DCR ${t.dcr}% · DNR ${t.dnr_rate}% · POD ${t.pod_score}% · CUSTOMER FEEDBACK ${t.feedback_score}%</p>
+        <div class="subh">DAY CURVE</div>
+        <div class="chart">${lineChart(d.curve)}</div>
+        <div class="subh">SAFETY EVENTS</div>
+        ${d.safety.length ? d.safety.map(s => `<div class="line-row">${s.occurred_at} — ${esc(s.type)} ${s.disputed ? '(disputed — ' + esc(s.outcome||'') + ')' : ''}</div>`).join('') : '<p class="dim mono" style="font-size:12.3px">Clean.</p>'}
+      </div></div>
+    </div>`;
+  $('courierDetail').scrollIntoView({behavior:'smooth', block:'start'});
+}
+</script>
+
+<script>
+async function vPod(){
+  const d = await api('/api/pod?date='+$('dTo').value);
+  $('s-pod').innerHTML = `<div class="panel">
+    <div class="phead"><h2><span class="no">04</span>POD PHOTOS</h2><span class="meta">${d.date}</span></div>
+    <div class="cols">
+      <div><div class="subh" style="margin-top:0">HALL OF FAME</div>
+        ${d.fame.map(x => `<div class="line-row">${esc(x.courier)} — <span class="ok">${x.pod_score}%</span></div>`).join('')}</div>
+      <div><div class="subh" style="margin-top:0">NEEDS A MORNING WORD</div>
+        ${d.shame.map(x => `<div class="line-row">${esc(x.courier)} — <span class="bad">${x.pod_score}%</span></div>`).join('')}</div>
+    </div>
+    <div class="subh">TODAY'S FLAGS</div>
+    ${d.flags.length ? d.flags.map(f => `<div class="alert amber"><span class="tick">[POD]</span><span class="who2">${esc(f.courier)}</span><span class="det">${esc(f.issue)}</span></div>`).join('') : '<p class="dim mono" style="font-size:12.3px">No flags.</p>'}
+  </div>`;
+}
+async function vSafety(){
+  const { events } = await api('/api/safety');
+  $('s-safety').innerHTML = `<div class="panel">
+    <div class="phead"><h2><span class="no">05</span>SAFETY LOG</h2><span class="meta">DISPUTE WINDOW: 48 HOURS FROM THE EVENT</span></div>
+    <table><tr><th>COURIER</th><th>EVENT</th><th>WHEN</th><th>DISPUTE BY</th><th>STATE</th><th></th></tr>
+    ${events.map(e => `<tr><td style="font-weight:600">${esc(e.courier)}</td><td class="mono" style="font-size:12.3px">${esc(e.type)}</td>
+      <td class="n" style="text-align:left">${e.occurred_at}</td><td class="n" style="text-align:left">${e.dispute_deadline}</td>
+      <td class="mono" style="font-size:11.8px">${e.window==='open' ? '<span class="warn">[OPEN — '+e.hours_left+'H LEFT]</span>'
+          : e.window==='disputed' ? '[DISPUTED — '+esc(e.outcome||'')+']'
+          : '<span class="bad">[WINDOW CLOSED]</span>'}</td>
+      <td>${e.window==='open' && S.role!=='viewer' ? `<button onclick="dispute(${e.id})">FILE DISPUTE</button>` : ''}</td></tr>`).join('')}</table>
+  </div>`;
+}
+async function dispute(id){ await api(`/api/safety/${id}/dispute`, { method:'POST', body: JSON.stringify({}) }); vSafety(); }
+async function vPlans(){
+  const [{ plans }, { rescues }, perf] = await Promise.all([
+    api('/api/plans'), api('/api/rescues?'+rng()), api('/api/performers?to='+$('dTo').value) ]);
+  $('s-plans').innerHTML = `<div class="panel">
+    <div class="phead"><h2><span class="no">06</span>PERFORMANCE SHARE — TRAILING 6 WEEKS</h2><span class="meta">THE AMAZON READ</span></div>
+    ${strip([['ELIGIBLE (WORKED 4+ WEEKS)', perf.eligible],
+             ['HIGH PERFORMERS', perf.high + ' (' + perf.high_share + '%)'],
+             ['LOW PERFORMERS', perf.low + ' (' + perf.low_share + '%)']])}
+    <p class="mono" style="font-size:12.3px;margin-top:10px">${Object.entries(perf.detail).map(([n,v]) => esc(n)+': '+v.toUpperCase()).join(' · ') || '—'}</p>
+    <div class="subh">IMPROVEMENT PLANS</div>
+    <table><tr><th>COURIER</th><th>CREATED</th><th>REVIEW</th><th>TASKS</th><th>STATUS</th></tr>
+    ${plans.map(p => `<tr><td style="font-weight:600">${esc(p.courier)}</td><td class="n" style="text-align:left">${p.created_date}</td>
+      <td class="n" style="text-align:left">${p.review_date}</td><td>${esc(p.tasks)}</td>
+      <td class="mono" style="font-size:11.8px">${esc(p.status).toUpperCase()}</td></tr>`).join('')}</table>
+    <div class="subh">RESCUES IN RANGE</div>
+    <table><tr><th>DAY</th><th>FROM</th><th>TO</th><th class="n">STOPS</th><th>NOTE</th></tr>
+    ${rescues.map(r => `<tr><td class="n" style="text-align:left">${r.date}</td><td>${esc(r.from_name)}</td><td>${esc(r.to_name)}</td>
+      <td class="n">${r.stops}</td><td>${esc(r.note)}</td></tr>`).join('')}</table>
+  </div>`;
+}
+async function vInvoices(){
+  const { invoices } = await api('/api/invoices');
+  $('s-invoices').innerHTML = `<div class="panel">
+    <div class="phead"><h2><span class="no">07</span>OFFICE INVOICE CHECK</h2>
+    <span class="meta">THE INVOICE COUNTS DAYS. THE RECORD COUNTS WHO ACTUALLY WORKED.</span></div>
+    <table><tr><th>OFFICE</th><th>PERIOD</th><th class="n">BILLED DAYS</th><th class="n">RECORDED DAYS</th>
+      <th class="n">VARIANCE</th><th class="n">VARIANCE (EGP)</th></tr>
+    ${invoices.map(i => `<tr><td style="font-weight:600">${esc(i.office)}</td>
+      <td class="n" style="text-align:left">${i.period_from} .. ${i.period_to}</td>
+      <td class="n">${i.billed_days}</td><td class="n">${i.recorded_days}</td>
+      <td class="n ${i.variance_days ? 'bad' : 'ok'}">${i.variance_days}</td>
+      <td class="n ${i.variance_days ? 'bad' : 'ok'}">${i.variance_money.toLocaleString('en-US')}</td></tr>`).join('')}</table>
+  </div>`;
+}
+async function vPlanner(){
+  $('s-planner').innerHTML = `<div class="panel">
+    <div class="phead"><h2><span class="no">08</span>TOMORROW PLANNER</h2></div>
+    <div class="filewrap">
+      <div class="fld"><label for="plDay">DAY</label><input type="date" id="plDay"></div>
+      <div class="fld"><label for="plVol">EXPECTED VOLUME</label><input type="number" id="plVol" value="1150" style="width:110px"></div>
+      <button class="primary" onclick="runPlanner()">COMPUTE</button>
+    </div>
+    <div id="plOut"></div>
+  </div>`;
+}
+async function runPlanner(){
+  const d = await api(`/api/planner?date=${$('plDay').value}&volume=${$('plVol').value}`);
+  $('plOut').innerHTML = `<div style="margin-top:14px">${strip([
+      ['AVG STOPS PER DA', d.avg_stops_per_da], ['DAs NEEDED', d.das_needed]])}
+    </div>
+    <div class="subh">SUPPLY BY OFFICE</div>
+    <table><tr><th>OFFICE</th><th class="n">DAs AVAILABLE</th><th class="n">MUST SUPPLY TOMORROW</th></tr>
+    ${d.allocation.map(a => `<tr><td style="font-weight:600">${esc(a.office)}</td><td class="n">${a.active_das}</td><td class="n">${a.must_supply}</td></tr>`).join('')}</table>
+    <div class="subh">ON LEAVE TOMORROW</div>
+    ${d.on_leave.length ? d.on_leave.map(x => `<div class="line-row">${esc(x.courier)} — ${esc(x.type)}</div>`).join('') : '<p class="dim mono" style="font-size:12.3px">None.</p>'}`;
+}
+async function vTV(){
+  const d = await api('/api/tv?'+rng());
+  $('s-tv').innerHTML = `<div class="panel tvwrap">
+    <div class="phead"><h2><span class="no">09</span>STATION BOARD</h2><span class="meta">SELECTED RANGE</span></div>
+    <table><tr><th class="n">RK</th><th>COURIER</th><th>OFFICE</th><th class="n">SUCCESS %</th><th class="n">DELIVERED</th></tr>
+    ${d.couriers.slice(0,8).map(c => `<tr><td class="n">${c.rank ?? '—'}</td><td style="font-weight:600">${esc(c.name)}</td>
+      <td class="dim">${esc(c.office_name ?? '')}</td>
+      <td class="n ${rateCls(c.success_rate)}">${c.success_rate}%</td><td class="n">${c.delivered.toLocaleString('en-US')}</td></tr>`).join('')}</table>
+  </div>`;
+}
+async function vAudit(){
+  try{
+    const { audit } = await api('/api/audit');
+    $('s-audit').innerHTML = `<div class="panel">
+      <div class="phead"><h2><span class="no">10</span>AUDIT LOG</h2><span class="meta">WHO CHANGED WHAT, AND WHEN</span></div>
+      <table><tr><th>WHEN</th><th>USER</th><th>RECORD</th><th>FIELD</th><th>FROM</th><th>TO</th></tr>
+      ${audit.map(a => `<tr><td class="n" style="text-align:left">${a.at}</td><td class="mono" style="font-size:12.3px">${esc(a.username)}</td>
+        <td>${esc(a.entity)} #${a.entity_id}</td><td class="mono" style="font-size:12.3px">${esc(a.field)}</td>
+        <td class="mono" style="font-size:12.3px">${esc(a.old_value ?? '')}</td>
+        <td class="mono" style="font-size:12.3px">${esc(a.new_value ?? '')}</td></tr>`).join('')}</table>
+    </div>`;
+  }catch(e){ $('s-audit').innerHTML = '<div class="panel"><p class="bad mono" style="font-size:12.5px">The audit trail is admin only.</p></div>'; }
+}
+function lineChart(points){
+  if(!points.length) return '<p class="dim mono" style="font-size:12.3px">No data in this range.</p>';
+  const W = 720, H = 220, L = 38, R = 8, T = 10, B = 26;
+  const xs = i => L + (W - L - R) * (points.length === 1 ? 0.5 : i / (points.length - 1));
+  const ys = v => T + (H - T - B) * (1 - v / 100);
+  const line = points.map((d, i) => `${xs(i).toFixed(1)},${ys(d.success_rate).toFixed(1)}`).join(' ');
+  const dots = points.map((d, i) => `<circle class="pt" cx="${xs(i)}" cy="${ys(d.success_rate)}" r="3"><title>${d.date}: ${d.success_rate}%</title></circle>`).join('');
+  const grid = [0, 50, 100].map(v => `<line class="grid" x1="${L}" x2="${W - R}" y1="${ys(v)}" y2="${ys(v)}"/><text x="2" y="${ys(v) + 4}">${v}%</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="success rate trend">${grid}` +
+    `<line class="axis" x1="${L}" x2="${L}" y1="${T}" y2="${H - B}"/>` +
+    `<polyline class="line" points="${line}"/>${dots}` +
+    `<text x="${L}" y="${H - 6}">${points[0].date}</text>` +
+    `<text x="${W - R - 74}" y="${H - 6}">${points[points.length - 1].date}</text></svg>`;
+}
+function officeBars(offices){
+  if(!offices.length) return '<p class="dim mono" style="font-size:12.3px">No offices.</p>';
+  const rowH = 30, W = 720, L = 170, max = 100;
+  const rows = offices.map((o, i) => {
+    const y = i * rowH + 6, w = Math.max(2, (W - L - 60) * o.success_rate / max);
+    return `<text x="${L - 8}" y="${y + 15}" text-anchor="end">${esc(o.name)}</text>` +
+      `<rect class="barB" x="${L}" y="${y}" width="${w}" height="16"><title>${esc(o.name)}: ${o.success_rate}%</title></rect>` +
+      `<text x="${L + w + 6}" y="${y + 14}">${o.success_rate}%</text>`;
+  }).join('');
+  return `<svg viewBox="0 0 ${W} ${offices.length * rowH + 10}" role="img" aria-label="success rate per office">${rows}</svg>`;
+}
+async function vReport(){
+  const d = await api('/api/report?'+rng());
+  const t = d.totals;
+  const sparks = await officeSparks(d.offices);
+  $('s-report').innerHTML = `
+    <div class="panel no-print">
+      <div class="filewrap">
+        <button class="primary" onclick="window.print()">PRINT REPORT</button>
+        <span class="dim mono" style="font-size:12px">This report follows the range above: ${d.from} .. ${d.to}</span>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="phead"><h2><span class="no">11</span>RANGE REPORT — ${d.from} .. ${d.to}</h2></div>
+      ${strip([['STOPS', t.assigned.toLocaleString('en-US')], ['DELIVERED', t.delivered.toLocaleString('en-US')],
+               ['SUCCESS', t.success_rate + '<span class="unit">%</span>', null, rateCls(t.success_rate)],
+               ['DCR', t.dcr + '<span class="unit">%</span>']])}
+      <div class="subh">SUCCESS TREND, DAY BY DAY</div>
+      <div class="chart">${lineChart(d.trend)}</div>
+      <div class="subh">SUCCESS BY OFFICE</div>
+      <div class="chart">${officeBars(d.offices)}</div>
+      <div class="subh">OFFICE SUMMARY</div>${officeTable(d.offices, sparks)}
+      <div class="subh">TOP COURIERS IN RANGE</div>${courierTable(d.couriers.slice(0, 10))}
+    </div>
+    <div class="panel alt no-print">
+      <div class="phead"><h2><span class="no">+</span>IMPORT DAILY RECORDS (CSV)</h2></div>
+      <p class="dim" style="font-size:12.5px;max-width:900px">Required columns: date, courier_id, assigned, delivered. Optional: attempted_failed, returns, dnr, pod_good, pod_bad, fb_pos, fb_neg, checkpoint_done. A row that already exists for the same DA and day is skipped and named in the result; a bad row is rejected with its reason written out.</p>
+      <div class="filewrap">
+        <label for="impFile"><span class="filebtn" style="display:inline-block;font-family:var(--sans);font-weight:700;font-size:11px;letter-spacing:.1em;background:var(--panel2);border:1px solid var(--line);padding:7px 14px;cursor:pointer">CHOOSE CSV FILE</span></label>
+        <input type="file" id="impFile" accept=".csv,text/csv" onchange="$('impName').textContent = this.files[0] ? this.files[0].name : 'no file chosen'">
+        <span class="fname" id="impName">no file chosen</span>
+        <button onclick="importCsv()">IMPORT</button>
+      </div>
+      <pre id="impOut" style="display:none"></pre>
+    </div>`;
+}
+async function importCsv(){
+  const f = $('impFile').files[0];
+  if(!f){ $('impOut').style.display='block'; $('impOut').textContent = 'Choose a CSV file first.'; return; }
+  const text = await f.text();
+  const r = await fetch('/api/import/records', { method:'POST',
+    headers:{ 'Authorization':'Bearer '+S.token, 'Content-Type':'text/csv' }, body: text });
+  const d = await r.json();
+  $('impOut').style.display='block';
+  $('impOut').textContent = r.ok
+    ? `Inserted ${d.inserted} rows. Skipped ${d.skipped_duplicates.length} duplicates: ` +
+      d.skipped_duplicates.map(x => `DA ${x.courier_id} on ${x.date}`).join(', ') +
+      `\nRejected ${d.rejected_rows.length} rows: ` +
+      d.rejected_rows.map(x => `row ${x.row}: ${x.reason}`).join('; ')
+    : ('Import failed: ' + (d.error || r.status));
+  if(r.ok) reload();
+}
+async function doSearch(){
+  const q = $('q').value.trim(), out = $('searchOut');
+  if(q.length < 2){ out.style.display='none'; return; }
+  const d = await api('/api/search?q='+encodeURIComponent(q));
+  out.innerHTML = d.couriers.map(c => `<div onclick="openCourier(${c.id})">COURIER — ${esc(c.name)}</div>`).join('') +
+                   d.offices.map(o => `<div onclick="pickOffice(${o.id})">OFFICE — ${esc(o.name)}</div>`).join('');
+  out.style.display = out.innerHTML ? 'block' : 'none';
+}
+async function exportCsv(kind){
+  const txt = await api(`/api/export/${kind}.csv?`+rng());
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt], { type:'text/csv' }));
+  a.download = kind + '.csv'; a.click();
+}
+/* keyboard-first: / finds, j/k walks the courier table, Enter opens */
+document.addEventListener('keydown', e => {
+  const tag = (document.activeElement || {}).tagName;
+  const typing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  if(e.key === '/' && !typing){ e.preventDefault(); $('q').focus(); return; }
+  if(!$('s-couriers') || !$('s-couriers').classList.contains('on') || typing) return;
+  const rows = [...document.querySelectorAll('#s-couriers tr[data-cid]')];
+  if(!rows.length) return;
+  if(e.key === 'j' || e.key === 'k'){
+    selIdx = e.key === 'j' ? Math.min(selIdx + 1, rows.length - 1) : Math.max(selIdx - 1, 0);
+    rows.forEach((r, i) => r.classList.toggle('sel', i === selIdx));
+    rows[selIdx].scrollIntoView({block:'nearest'});
+  }
+  if(e.key === 'Enter' && selIdx >= 0) openCourier(+rows[selIdx].dataset.cid);
+});
+if(S.token){ boot().catch(showLogin); }
+</script>
+</body>
+</html>
