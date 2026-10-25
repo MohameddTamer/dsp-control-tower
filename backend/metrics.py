@@ -22,7 +22,7 @@ def _on_leave(spans, day):
 def day_rows(conn, date_from, date_to, office_id=None):
     """Daily records in range, leave days already removed.
     Office on a row is the office the da belonged to THAT day (snapshot
-    taken at seed/entry time) — a transfer never rewrites history."""
+    taken at seed/entry time), a transfer never rewrites history."""
     sql = "SELECT * FROM daily_records WHERE date BETWEEN ? AND ?"
     args = [date_from, date_to]
     if office_id:
@@ -36,7 +36,7 @@ def day_rows(conn, date_from, date_to, office_id=None):
         if da not in spans:
             spans[da] = leave_days(conn, da)
         if _on_leave(spans[da], r["date"]):
-            continue  # record typed in by mistake during leave — it does not count
+            continue  # record typed in by mistake during leave, it does not count
         out.append(r)
     return out
 

@@ -124,7 +124,7 @@ def main():
         if day.weekday() != 4:  # Friday is the station day off
             for da_id, name, _o, route, skill, base_stops in DAS:
                 if on_leave(da_id, day):
-                    continue  # out of distribution — no row, no zero, no blame
+                    continue  # out of distribution, no row, no zero, no blame
                 if da_id == 10 and (day < date(2026, 10, 12) or day.weekday() not in (5, 0, 2)):
                     continue  # Al Nokhba: new office on trial, one da, three days a week.
                               # Tiny totals are the whole point of him. The ranking must not crown him.
