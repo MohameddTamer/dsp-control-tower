@@ -84,14 +84,14 @@ range as the screen.
 
 ## Words we use, because the station uses them
 
-- **DA** — delivery associate. The courier.
-- **DSP** — the delivery company / station operation.
-- **RTS** — return to station. The parcel came back with the DA.
-- **DNR** — delivered, not received. Customer says it never arrived.
+- **DA**, delivery associate. The courier.
+- **DSP**, the delivery company / station operation.
+- **RTS**, return to station. The parcel came back with the DA.
+- **DNR**, delivered, not received. Customer says it never arrived.
   One DNR hurts more than three honest failures.
-- **DCR** — delivery completion rate. Delivered out of everything assigned.
-- **POD** — photo on delivery, and whether the photo would survive a claim.
-- **Checkpoint** — 13:00. The hour a falling day can still be saved.
+- **DCR**, delivery completion rate. Delivered out of everything assigned.
+- **POD**, photo on delivery, and whether the photo would survive a claim.
+- **Checkpoint**, 13:00. The hour a falling day can still be saved.
 
 ## The deepening layer
 

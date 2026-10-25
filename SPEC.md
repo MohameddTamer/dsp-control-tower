@@ -1,4 +1,4 @@
-# DSP Control Tower — Specification (v3, awaiting owner approval before build)
+# DSP Control Tower, Specification (v3, awaiting owner approval before build)
 
 Status: IDEA STAGE. Per owner's process rule: idea first, his word, then build.
 Nothing in this spec is built yet beyond the local v1 draft, which is NOT published.
