@@ -32,7 +32,7 @@ def fixture():
     rec("2026-10-02", 1, 1, "City", 100, 95, 5)
     rec("2026-10-01", 2, 1, "Rural", 100, 80, 20)
     rec("2026-10-02", 3, 2, "City", 50, 50, 0)
-    rec("2026-10-03", 3, 2, "City", 50, 0, 50)    # typed in while he was on sick leave — must vanish
+    rec("2026-10-03", 3, 2, "City", 50, 0, 50)    # typed in while he was on sick leave, must vanish
     rec("2026-09-30", 4, 2, "City", 40, 30, 10)   # before the transfer: Al Salam's numbers
     rec("2026-10-02", 4, 1, "City", 60, 60, 0)    # after the transfer: Al Nour's numbers
     rec("2026-10-01", 5, 3, "City", 10, 9, 1)     # tiny sample office
