@@ -181,7 +181,7 @@
     <button onclick="exportCsv('couriers')">COURIERS CSV</button>
   </div>
 </header>
-<div id="ticker" aria-hidden="true"><span class="track" id="tickerTrack">STATION WIRE — WAITING FOR DATA</span></div>
+<div id="ticker" aria-hidden="true"><span class="track" id="tickerTrack">STATION WIRE, WAITING FOR DATA</span></div>
 <nav id="tabs"></nav>
 <main>
   <section id="s-home"></section>
@@ -230,7 +230,7 @@ function armFlash(scope){
   });
 }
 function spark(points, w=88, h=20){
-  if(!points || points.length < 2) return '<span class="dim mono" style="font-size:11px">—</span>';
+  if(!points || points.length < 2) return '<span class="dim mono" style="font-size:11px">-</span>';
   const min = Math.min(...points), max = Math.max(...points), span = (max - min) || 1;
   const pts = points.map((v,i) => (1 + i*(w-2)/(points.length-1)).toFixed(1) + ',' +
                                  (h-3-((v-min)/span)*(h-6)).toFixed(1)).join(' ');
@@ -291,7 +291,7 @@ async function vHome(){
   const rate = C ? (100*D/C).toFixed(1) : 0;
   const top = offices.find(o => o.rank === 1);
   setTicker([['STATION SUCCESS', rate+'%'], ['STOPS', A.toLocaleString('en-US')], ['DELIVERED', D.toLocaleString('en-US')],
-             ['RTS', R], ['TOP OFFICE', top ? `${top.name} ${top.success_rate}%` : '—'],
+             ['RTS', R], ['TOP OFFICE', top ? `${top.name} ${top.success_rate}%` : '-'],
              ['ALERTS ' + $('dTo').value, al.alerts.length]]);
   const sparks = await officeSparks(offices);
   $('s-home').innerHTML = `
@@ -314,7 +314,7 @@ async function vHome(){
       ${officeTable(offices, sparks)}
     </div>
     <div class="panel alt">
-      <div class="phead"><h2><span class="no">C</span>COURIER RANKING</h2><span class="meta">J/K MOVES, ENTER OPENS — COURIERS SCREEN</span></div>
+      <div class="phead"><h2><span class="no">C</span>COURIER RANKING</h2><span class="meta">J/K MOVES, ENTER OPENS, COURIERS SCREEN</span></div>
       ${courierTable(couriers)}
     </div>`;
   armFlash($('s-home'));
@@ -327,8 +327,8 @@ function officeTable(rows, sparks){
       <td class="n">${o.couriers_active}</td><td class="n">${o.assigned.toLocaleString('en-US')}</td><td class="n">${o.delivered.toLocaleString('en-US')}</td>
       <td class="n ${rateCls(o.success_rate)}" data-fk="off${o.id}">${o.success_rate}%</td><td class="n">${o.dcr}%</td>
       <td class="n">${o.dnr_rate}%</td><td class="n">${o.pod_score}%</td>
-      <td class="mono" style="font-size:12px">${o.trend === null ? '<span class="dim">—</span>' : (o.trend >= 0 ? '<span class="ok">▲ ' : '<span class="bad">▼ ') + Math.abs(o.trend) + '</span>'}</td>
-      <td>${sparks ? spark(sparks[o.id]) : '<span class="dim">—</span>'}</td></tr>`).join('') + '</table>';
+      <td class="mono" style="font-size:12px">${o.trend === null ? '<span class="dim">-</span>' : (o.trend >= 0 ? '<span class="ok">▲ ' : '<span class="bad">▼ ') + Math.abs(o.trend) + '</span>'}</td>
+      <td>${sparks ? spark(sparks[o.id]) : '<span class="dim">-</span>'}</td></tr>`).join('') + '</table>';
 }
 function courierTable(rows){
   return `<table><tr><th class="n">RK</th><th>COURIER</th><th>OFFICE</th><th class="n">STOPS</th><th class="n">DELIVERED</th>
@@ -388,19 +388,19 @@ async function openCourier(id){
   const p = d.profile, t = d.totals;
   $('courierDetail').innerHTML = `
     <div class="panel alt">
-      <div class="phead"><h2>${esc(p.name).toUpperCase()}</h2><span class="meta">DA FILE — RANGE ${$('dFrom').value} .. ${$('dTo').value}</span></div>
+      <div class="phead"><h2>${esc(p.name).toUpperCase()}</h2><span class="meta">DA FILE, RANGE ${$('dFrom').value} .. ${$('dTo').value}</span></div>
       <div class="cols"><div>
         <dl class="facts">
           <dt>PHONE</dt><dd>${esc(p.phone)}</dd>
           <dt>VEHICLE</dt><dd>${esc(p.vehicle)}</dd>
           <dt>STARTED</dt><dd>${esc(p.start_date)}</dd>
           <dt>CURRENT OFFICE</dt><dd>${esc(officeNames[d.office_now] || ('Office #' + d.office_now))}</dd>
-          <dt>NOTES</dt><dd>${esc(p.notes) || '—'}</dd>
+          <dt>NOTES</dt><dd>${esc(p.notes) || '-'}</dd>
         </dl>
         <div class="subh">ANNUAL LEAVE BALANCE</div>
         <p class="mono" style="font-size:12.5px">Taken ${d.leave_used_annual} days · ${d.leave_balance_annual} left of ${p.annual_leave_total}</p>
         <div class="subh">OFFICE HISTORY</div>
-        ${d.office_history.map(h => `<div class="line-row">${esc(h.office_name)}: ${h.from_date} ${h.to_date ? 'to '+h.to_date : '— current'}</div>`).join('')}
+        ${d.office_history.map(h => `<div class="line-row">${esc(h.office_name)}: ${h.from_date} ${h.to_date ? 'to '+h.to_date : '- current'}</div>`).join('')}
         <div class="subh">LEAVE</div>
         ${d.leaves.length ? d.leaves.map(l => `<div class="line-row">${esc(l.type)}: ${l.from_date} to ${l.to_date}</div>`).join('') : '<p class="dim mono" style="font-size:12.3px">None.</p>'}
       </div><div>
@@ -410,7 +410,7 @@ async function openCourier(id){
         <div class="subh">DAY CURVE</div>
         <div class="chart">${lineChart(d.curve)}</div>
         <div class="subh">SAFETY EVENTS</div>
-        ${d.safety.length ? d.safety.map(s => `<div class="line-row">${s.occurred_at} — ${esc(s.type)} ${s.disputed ? '(disputed — ' + esc(s.outcome||'') + ')' : ''}</div>`).join('') : '<p class="dim mono" style="font-size:12.3px">Clean.</p>'}
+        ${d.safety.length ? d.safety.map(s => `<div class="line-row">${s.occurred_at}, ${esc(s.type)} ${s.disputed ? '(disputed, ' + esc(s.outcome||'') + ')' : ''}</div>`).join('') : '<p class="dim mono" style="font-size:12.3px">Clean.</p>'}
       </div></div>
     </div>`;
   $('courierDetail').scrollIntoView({behavior:'smooth', block:'start'});
@@ -424,9 +424,9 @@ async function vPod(){
     <div class="phead"><h2><span class="no">04</span>POD PHOTOS</h2><span class="meta">${d.date}</span></div>
     <div class="cols">
       <div><div class="subh" style="margin-top:0">HALL OF FAME</div>
-        ${d.fame.map(x => `<div class="line-row">${esc(x.courier)} — <span class="ok">${x.pod_score}%</span></div>`).join('')}</div>
+        ${d.fame.map(x => `<div class="line-row">${esc(x.courier)}, <span class="ok">${x.pod_score}%</span></div>`).join('')}</div>
       <div><div class="subh" style="margin-top:0">NEEDS A MORNING WORD</div>
-        ${d.shame.map(x => `<div class="line-row">${esc(x.courier)} — <span class="bad">${x.pod_score}%</span></div>`).join('')}</div>
+        ${d.shame.map(x => `<div class="line-row">${esc(x.courier)}, <span class="bad">${x.pod_score}%</span></div>`).join('')}</div>
     </div>
     <div class="subh">TODAY'S FLAGS</div>
     ${d.flags.length ? d.flags.map(f => `<div class="alert amber"><span class="tick">[POD]</span><span class="who2">${esc(f.courier)}</span><span class="det">${esc(f.issue)}</span></div>`).join('') : '<p class="dim mono" style="font-size:12.3px">No flags.</p>'}
@@ -439,8 +439,8 @@ async function vSafety(){
     <table><tr><th>COURIER</th><th>EVENT</th><th>WHEN</th><th>DISPUTE BY</th><th>STATE</th><th></th></tr>
     ${events.map(e => `<tr><td style="font-weight:600">${esc(e.courier)}</td><td class="mono" style="font-size:12.3px">${esc(e.type)}</td>
       <td class="n" style="text-align:left">${e.occurred_at}</td><td class="n" style="text-align:left">${e.dispute_deadline}</td>
-      <td class="mono" style="font-size:11.8px">${e.window==='open' ? '<span class="warn">[OPEN — '+e.hours_left+'H LEFT]</span>'
-          : e.window==='disputed' ? '[DISPUTED — '+esc(e.outcome||'')+']'
+      <td class="mono" style="font-size:11.8px">${e.window==='open' ? '<span class="warn">[OPEN, '+e.hours_left+'H LEFT]</span>'
+          : e.window==='disputed' ? '[DISPUTED, '+esc(e.outcome||'')+']'
           : '<span class="bad">[WINDOW CLOSED]</span>'}</td>
       <td>${e.window==='open' && S.role!=='viewer' ? `<button onclick="dispute(${e.id})">FILE DISPUTE</button>` : ''}</td></tr>`).join('')}</table>
   </div>`;
@@ -450,11 +450,11 @@ async function vPlans(){
   const [{ plans }, { rescues }, perf] = await Promise.all([
     api('/api/plans'), api('/api/rescues?'+rng()), api('/api/performers?to='+$('dTo').value) ]);
   $('s-plans').innerHTML = `<div class="panel">
-    <div class="phead"><h2><span class="no">06</span>PERFORMANCE SHARE — TRAILING 6 WEEKS</h2><span class="meta">THE AMAZON READ</span></div>
+    <div class="phead"><h2><span class="no">06</span>PERFORMANCE SHARE, TRAILING 6 WEEKS</h2><span class="meta">THE AMAZON READ</span></div>
     ${strip([['ELIGIBLE (WORKED 4+ WEEKS)', perf.eligible],
              ['HIGH PERFORMERS', perf.high + ' (' + perf.high_share + '%)'],
              ['LOW PERFORMERS', perf.low + ' (' + perf.low_share + '%)']])}
-    <p class="mono" style="font-size:12.3px;margin-top:10px">${Object.entries(perf.detail).map(([n,v]) => esc(n)+': '+v.toUpperCase()).join(' · ') || '—'}</p>
+    <p class="mono" style="font-size:12.3px;margin-top:10px">${Object.entries(perf.detail).map(([n,v]) => esc(n)+': '+v.toUpperCase()).join(' · ') || '-'}</p>
     <div class="subh">IMPROVEMENT PLANS</div>
     <table><tr><th>COURIER</th><th>CREATED</th><th>REVIEW</th><th>TASKS</th><th>STATUS</th></tr>
     ${plans.map(p => `<tr><td style="font-weight:600">${esc(p.courier)}</td><td class="n" style="text-align:left">${p.created_date}</td>
@@ -500,14 +500,14 @@ async function runPlanner(){
     <table><tr><th>OFFICE</th><th class="n">DAs AVAILABLE</th><th class="n">MUST SUPPLY TOMORROW</th></tr>
     ${d.allocation.map(a => `<tr><td style="font-weight:600">${esc(a.office)}</td><td class="n">${a.active_das}</td><td class="n">${a.must_supply}</td></tr>`).join('')}</table>
     <div class="subh">ON LEAVE TOMORROW</div>
-    ${d.on_leave.length ? d.on_leave.map(x => `<div class="line-row">${esc(x.courier)} — ${esc(x.type)}</div>`).join('') : '<p class="dim mono" style="font-size:12.3px">None.</p>'}`;
+    ${d.on_leave.length ? d.on_leave.map(x => `<div class="line-row">${esc(x.courier)}, ${esc(x.type)}</div>`).join('') : '<p class="dim mono" style="font-size:12.3px">None.</p>'}`;
 }
 async function vTV(){
   const d = await api('/api/tv?'+rng());
   $('s-tv').innerHTML = `<div class="panel tvwrap">
     <div class="phead"><h2><span class="no">09</span>STATION BOARD</h2><span class="meta">SELECTED RANGE</span></div>
     <table><tr><th class="n">RK</th><th>COURIER</th><th>OFFICE</th><th class="n">SUCCESS %</th><th class="n">DELIVERED</th></tr>
-    ${d.couriers.slice(0,8).map(c => `<tr><td class="n">${c.rank ?? '—'}</td><td style="font-weight:600">${esc(c.name)}</td>
+    ${d.couriers.slice(0,8).map(c => `<tr><td class="n">${c.rank ?? '-'}</td><td style="font-weight:600">${esc(c.name)}</td>
       <td class="dim">${esc(c.office_name ?? '')}</td>
       <td class="n ${rateCls(c.success_rate)}">${c.success_rate}%</td><td class="n">${c.delivered.toLocaleString('en-US')}</td></tr>`).join('')}</table>
   </div>`;
@@ -562,7 +562,7 @@ async function vReport(){
       </div>
     </div>
     <div class="panel">
-      <div class="phead"><h2><span class="no">11</span>RANGE REPORT — ${d.from} .. ${d.to}</h2></div>
+      <div class="phead"><h2><span class="no">11</span>RANGE REPORT, ${d.from} .. ${d.to}</h2></div>
       ${strip([['STOPS', t.assigned.toLocaleString('en-US')], ['DELIVERED', t.delivered.toLocaleString('en-US')],
                ['SUCCESS', t.success_rate + '<span class="unit">%</span>', null, rateCls(t.success_rate)],
                ['DCR', t.dcr + '<span class="unit">%</span>']])}
@@ -605,8 +605,8 @@ async function doSearch(){
   const q = $('q').value.trim(), out = $('searchOut');
   if(q.length < 2){ out.style.display='none'; return; }
   const d = await api('/api/search?q='+encodeURIComponent(q));
-  out.innerHTML = d.couriers.map(c => `<div onclick="openCourier(${c.id})">COURIER — ${esc(c.name)}</div>`).join('') +
-                   d.offices.map(o => `<div onclick="pickOffice(${o.id})">OFFICE — ${esc(o.name)}</div>`).join('');
+  out.innerHTML = d.couriers.map(c => `<div onclick="openCourier(${c.id})">COURIER, ${esc(c.name)}</div>`).join('') +
+                   d.offices.map(o => `<div onclick="pickOffice(${o.id})">OFFICE, ${esc(o.name)}</div>`).join('');
   out.style.display = out.innerHTML ? 'block' : 'none';
 }
 async function exportCsv(kind){
